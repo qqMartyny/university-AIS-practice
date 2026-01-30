@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+*.log
+
+# ML models (большие файлы)
+*.pt
+*.pth
+*.onnx
+
+# Видео файлы (большие)
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Изображения (кроме примеров)
+data/videos/*.jpg
+data/videos/*.png
+data/configs/*.jpg
+data/configs/*.png
+
+# Output (генерируемые файлы)
+output/
+temp/
+
+# Конфиги (содержат пути)
+data/configs/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Разрешаем README
+!data/videos/README.md
+!data/configs/README.md
+!output/README.md
