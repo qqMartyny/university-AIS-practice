@@ -240,6 +240,20 @@
             margin: 15px 0;
             color: #856404;
         }
+        
+        .history-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+        
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
     </style>
 </head>
 <body>
@@ -250,6 +264,16 @@
         </header>
         
         <div class="content">
+            <!-- История анализов -->
+            <div class="step">
+                <h2 class="step-title">
+                    📋 История анализов
+                </h2>
+                <div id="historyList" style="max-height: 400px; overflow-y: auto;">
+                    <p style="text-align: center; color: #666;">Загрузка...</p>
+                </div>
+            </div>
+            
             <!-- Шаг 1: Загрузка видео -->
             <div id="step1" class="step">
                 <h2 class="step-title">
@@ -620,6 +644,9 @@
                 `;
                 statsGrid.innerHTML += card;
             }
+            
+            // Обновляем историю
+            loadHistory();
         }
 
         // Скачивание отчётов
@@ -634,6 +661,56 @@
         function downloadJSON() {
             window.open(`/api/analysis/${analysisId}/json`, '_blank');
         }
+        
+        // История анализов
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history');
+                const history = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p style="text-align: center; color: #666;">История пуста</p>';
+                    return;
+                }
+                
+                historyList.innerHTML = history.map(item => `
+                    <div class="history-item">
+                        <strong style="font-size: 1.1em;">${item.video_filename}</strong>
+                        <p style="color: #666; font-size: 0.9em; margin: 5px 0;">
+                            📅 ${new Date(item.created_at).toLocaleString('ru-RU')}
+                        </p>
+                        <p style="margin: 8px 0;">
+                            <span style="color: #667eea;">Столов: ${item.total_tables}</span> | 
+                            <span style="color: #667eea;">Загруженность: ${item.avg_occupancy.toFixed(1)}%</span>
+                        </p>
+                        <button onclick="viewAnalysis('${item.id}')" style="padding: 8px 20px; font-size: 0.9em; margin-top: 10px;">
+                            👁️ Посмотреть результаты
+                        </button>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                document.getElementById('historyList').innerHTML = 
+                    '<p style="text-align: center; color: #e74c3c;">Ошибка загрузки истории</p>';
+            }
+        }
+
+        async function viewAnalysis(id) {
+            analysisId = id;
+            
+            // Скрываем шаги 1-3, показываем результаты
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'none';
+            
+            await displayResults();
+        }
+
+        // Загружаем историю при загрузке страницы
+        loadHistory();
     </script>
 </body>
 </html>

@@ -17,6 +17,28 @@ from core.video_processor import VideoProcessor
 from utils.report_generator import generate_occupancy_chart
 from utils.pdf_generator import generate_pdf_report
 
+# Файл для хранения истории
+HISTORY_FILE = Path("data/analysis_history.json")
+HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+def load_history():
+    """Загрузить историю анализов из файла"""
+    if HISTORY_FILE.exists():
+        try:
+            with open(HISTORY_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_history():
+    """Сохранить историю анализов в файл"""
+    with open(HISTORY_FILE, 'w') as f:
+        json.dump(analysis_results, f, indent=2)
+
+# Загружаем историю при старте
+analysis_results = load_history()
+
 app = FastAPI(title="Cafe Table Analytics")
 
 # Папки
@@ -128,6 +150,8 @@ async def analyze_video(
             'created_at': datetime.now().isoformat(),
             'results': results
         }
+
+        save_history()  # Сохраняем в файл
         
         # Удаляем временные файлы
         video_path.unlink()
@@ -143,6 +167,28 @@ async def analyze_video(
     except Exception as e:
         print(f"Ошибка обработки: {str(e)}")
         raise HTTPException(500, f"Analysis failed: {str(e)}")
+    
+@app.get("/api/history")
+async def get_history():
+    """
+    Получить список всех анализов
+    """
+    history_list = [
+        {
+            'id': data['id'],
+            'video_filename': data['video_filename'],
+            'created_at': data['created_at'],
+            'status': data['status'],
+            'total_tables': data['results']['overall_statistics']['total_tables'],
+            'avg_occupancy': data['results']['overall_statistics']['average_occupancy_rate']
+        }
+        for data in analysis_results.values()
+    ]
+    
+    # Сортируем по дате (новые первые)
+    history_list.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    return history_list
 
 @app.get("/api/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
