@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe Table Analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .step-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background: #f8f9fa;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e3e7f3;
+            border-color: #667eea;
+        }
+        
+        #videoInput {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #calibrationCanvas {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: crosshair;
+            max-width: 100%;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .canvas-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .canvas-controls button {
+            margin: 0 10px;
+        }
+        
+        .table-list {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .table-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            padding: 5px 15px;
+            font-size: 0.9em;
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .download-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .download-section button {
+            margin: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .instruction {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☕ Cafe Table Analytics</h1>
+            <p class="subtitle">Автоматический анализ загруженности столов</p>
+        </header>
+        
+        <div class="content">
+            <!-- Шаг 1: Загрузка видео -->
+            <div id="step1" class="step">
+                <h2 class="step-title">
+                    <span class="step-number">1</span>
+                    Загрузите видео
+                </h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📹</div>
+                    <p style="font-size: 1.2em; margin-bottom: 10px;">
+                        Перетащите видео сюда или нажмите для выбора
+                    </p>
+                    <p style="color: #666;">Поддерживаются: MP4, AVI, MOV</p>
+                    <input type="file" id="videoInput" accept="video/*">
+                </div>
+                <p id="videoName" style="margin-top: 15px; font-weight: bold; color: #667eea;"></p>
+            </div>
+            
+            <!-- Шаг 2: Разметка столов -->
+            <div id="step2" class="step hidden">
+                <h2 class="step-title">
+                    <span class="step-number">2</span>
+                    Отметьте столы
+                </h2>
+                <div class="instruction">
+                    <strong>📍 Инструкция:</strong> Нажмите и тяните мышью, чтобы нарисовать прямоугольник вокруг каждого стола. 
+                    Кнопка "Удалить последний" удаляет последний добавленный стол.
+                </div>
+                <canvas id="calibrationCanvas"></canvas>
+                <div class="canvas-controls">
+                    <button onclick="undoLastTable()">↶ Удалить последний</button>
+                    <button onclick="clearAllTables()">🗑️ Очистить всё</button>
+                    <button onclick="startAnalysis()" id="analyzeBtn" disabled>
+                        ✓ Начать анализ (<span id="tableCount">0</span> столов)
+                    </button>
+                </div>
+                <div id="tableList" class="table-list hidden"></div>
+            </div>
+            
+            <!-- Шаг 3: Обработка -->
+            <div id="step3" class="step hidden">
+                <h2 class="step-title">
+                    <span class="step-number">3</span>
+                    Обработка видео
+                </h2>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p style="font-size: 1.2em; margin-top: 20px;">
+                        Анализируем видео... Это может занять несколько минут
+                    </p>
+                    <p id="progressText" style="color: #666; margin-top: 10px;"></p>
+                </div>
+            </div>
+            
+            <!-- Шаг 4: Результаты -->
+            <div id="step4" class="step hidden">
+                <h2 class="step-title">
+                    <span class="step-number">4</span>
+                    Результаты анализа
+                </h2>
+                
+                <div class="stats-grid" id="statsGrid"></div>
+                
+                <div class="download-section">
+                    <h3 style="margin-bottom: 20px;">Скачать отчёты:</h3>
+                    <button onclick="downloadPDF()">📄 PDF Отчёт</button>
+                    <button onclick="downloadChart()">📊 График PNG</button>
+                    <button onclick="downloadJSON()">📋 JSON Данные</button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="location.reload()">🔄 Новый анализ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let videoFile = null;
+        let canvas, ctx;
+        let tables = [];
+        let drawing = false;
+        let startX, startY;
+        let analysisId = null;
+        let frameImage = null;
+
+        // Шаг 1: Загрузка видео
+        const uploadArea = document.getElementById('uploadArea');
+        const videoInput = document.getElementById('videoInput');
+
+        uploadArea.addEventListener('click', () => videoInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleVideoUpload(files[0]);
+            }
+        });
+        
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleVideoUpload(e.target.files[0]);
+            }
+        });
+
+        async function handleVideoUpload(file) {
+            videoFile = file;
+            document.getElementById('videoName').textContent = `✓ Выбрано: ${file.name}`;
+            
+            // Извлекаем первый кадр
+            const formData = new FormData();
+            formData.append('video', videoFile);
+            
+            try {
+                const response = await fetch('/api/extract-frame', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const blob = await response.blob();
+                frameImage = URL.createObjectURL(blob);
+                
+                // Переходим к шагу 2
+                document.getElementById('step2').classList.remove('hidden');
+                setupCanvas();
+                
+            } catch (error) {
+                alert('Ошибка при извлечении кадра: ' + error.message);
+            }
+        }
+
+        // Шаг 2: Разметка столов
+        function setupCanvas() {
+            canvas = document.getElementById('calibrationCanvas');
+            ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.onload = function() {
+                // Масштабируем под ширину контейнера
+                const maxWidth = 900;
+                const scale = Math.min(1, maxWidth / img.width);
+                
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = frameImage;
+            
+            // Обработчики мыши
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            drawing = true;
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            redrawCanvas();
+            
+            // Рисуем текущий прямоугольник
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(
+                startX,
+                startY,
+                currentX - startX,
+                currentY - startY
+            );
+        }
+
+        function stopDrawing(e) {
+            if (!drawing) return;
+            drawing = false;
+            
+            const rect = canvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            
+            // Нормализуем координаты
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+            
+            // Минимальный размер 20x20
+            if (x2 - x1 > 20 && y2 - y1 > 20) {
+                tables.push({ x1, y1, x2, y2 });
+                updateTableCount();
+                redrawCanvas();
+            }
+        }
+
+        function redrawCanvas() {
+            const img = new Image();
+            img.onload = function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Рисуем все столы
+                tables.forEach((table, idx) => {
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(
+                        table.x1,
+                        table.y1,
+                        table.x2 - table.x1,
+                        table.y2 - table.y1
+                    );
+                    
+                    // Номер стола
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillText(`Table ${idx}`, table.x1 + 5, table.y1 + 25);
+                });
+            };
+            img.src = frameImage;
+        }
+
+        function updateTableCount() {
+            document.getElementById('tableCount').textContent = tables.length;
+            document.getElementById('analyzeBtn').disabled = tables.length === 0;
+        }
+
+        function undoLastTable() {
+            if (tables.length > 0) {
+                tables.pop();
+                updateTableCount();
+                redrawCanvas();
+            }
+        }
+
+        function clearAllTables() {
+            if (confirm('Удалить все столы?')) {
+                tables = [];
+                updateTableCount();
+                redrawCanvas();
+            }
+        }
+
+        // Шаг 3: Анализ
+        async function startAnalysis() {
+            if (tables.length === 0) {
+                alert('Пожалуйста, отметьте хотя бы один стол');
+                return;
+            }
+            
+            // Показываем шаг 3
+            document.getElementById('step3').classList.remove('hidden');
+            document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
+            
+            // ВАЖНО: Вычисляем коэффициент масштабирования
+            const img = new Image();
+            img.src = frameImage;
+            await new Promise(resolve => { img.onload = resolve; });
+            
+            const scaleX = img.width / canvas.width;
+            const scaleY = img.height / canvas.height;
+            
+            console.log(`Масштаб: ${scaleX}x, ${scaleY}y`);
+            console.log(`Canvas: ${canvas.width}x${canvas.height}, Image: ${img.width}x${img.height}`);
+            
+            // Формируем конфигурацию столов с масштабированными координатами
+            const tablesConfig = {
+                tables: tables.map((table, idx) => ({
+                    id: idx,
+                    bbox: {
+                        x1: Math.round(table.x1 * scaleX),
+                        y1: Math.round(table.y1 * scaleY),
+                        x2: Math.round(table.x2 * scaleX),
+                        y2: Math.round(table.y2 * scaleY)
+                    }
+                }))
+            };
+            
+            console.log('Tables config:', JSON.stringify(tablesConfig, null, 2));
+            
+            // Отправляем на сервер
+            const formData = new FormData();
+            formData.append('video', videoFile);
+            formData.append('tables_config', JSON.stringify(tablesConfig));
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Analysis failed');
+                }
+                
+                const data = await response.json();
+                analysisId = data.analysis_id;
+                
+                // Показываем результаты
+                await displayResults();
+                
+            } catch (error) {
+                alert('Ошибка анализа: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        async function displayResults() {
+            const response = await fetch(`/api/analysis/${analysisId}`);
+            const data = await response.json();
+            const results = data.results;
+            
+            // Скрываем шаг 3, показываем шаг 4
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.remove('hidden');
+            document.getElementById('step4').scrollIntoView({ behavior: 'smooth' });
+            
+            // Статистика
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            // Общая статистика
+            const overallCard = `
+                <div class="stat-card">
+                    <div class="stat-label">Средняя загруженность</div>
+                    <div class="stat-value">${results.overall_statistics.average_occupancy_rate.toFixed(1)}%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Всего столов</div>
+                    <div class="stat-value">${results.overall_statistics.total_tables}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Длительность видео</div>
+                    <div class="stat-value">${(results.video_info.duration / 60).toFixed(1)} мин</div>
+                </div>
+            `;
+            statsGrid.innerHTML = overallCard;
+            
+            // Статистика по столам
+            for (const [tableId, stats] of Object.entries(results.statistics)) {
+                const card = `
+                    <div class="stat-card">
+                        <div class="stat-label">Стол ${tableId}</div>
+                        <div class="stat-value">${stats.occupancy_rate.toFixed(1)}%</div>
+                        <p style="color: #666; margin-top: 10px;">
+                            ${(stats.total_occupied_time / 60).toFixed(1)} мин занят
+                        </p>
+                    </div>
+                `;
+                statsGrid.innerHTML += card;
+            }
+        }
+
+        // Скачивание отчётов
+        function downloadPDF() {
+            window.open(`/api/analysis/${analysisId}/pdf`, '_blank');
+        }
+
+        function downloadChart() {
+            window.open(`/api/analysis/${analysisId}/chart`, '_blank');
+        }
+
+        function downloadJSON() {
+            window.open(`/api/analysis/${analysisId}/json`, '_blank');
+        }
+    </script>
+</body>
+</html>

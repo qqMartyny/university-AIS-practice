@@ -12,7 +12,7 @@ from utils.visualization import draw_detections, save_debug_frame
 
 
 class VideoProcessor:
-    def __init__(self, video_path: str, tables_config_path: str, frame_interval: int = 10):
+    def __init__(self, video_path: str, tables_config_path: str, frame_interval: float = 0.5):
         """
         Args:
             video_path: путь к видео файлу
